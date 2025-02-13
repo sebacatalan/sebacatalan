@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Formulario de Turismo</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        select,
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #mensajes {
+            margin-top: 10px;
+        }
+
+        .exito {
+            color: green;
+            background-color: #d4edda;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .error {
+            color: red;
+            background-color: #f8d7da;
+            padding: 10px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Formulario de Turismo</h1>
+
+    <form id="formulario" method="POST">
+        <label for="nacionalidad">Nacionalidad:</label>
+        <select name="nacionalidad" id="nacionalidad" onchange="verificarNacionalidad()">
+            <option value="" selected>Seleccione...</option>
+            {% for pais in nacionalidades %}
+            <option value="{{ pais }}">{{ pais }}</option>
+            {% endfor %}
+        </select><br><br>
+
+        <div id="div_comuna" style="display: none;">
+            <label for="comuna">Comuna de Residencia:</label>
+            <select name="comuna" id="comuna" disabled>
+                <option value="" selected>Seleccione...</option>
+                {% for comuna in comunas_chile %}
+                <option value="{{ comuna }}">{{ comuna }}</option>
+                {% endfor %}
+            </select><br><br>
+        </div>
+
+        <label for="motivo_visita">Motivo Principal de Visita:</label>
+        <select name="motivo_visita" id="motivo_visita">
+            <option value="" selected>Seleccione...</option>
+            <option value="Naturaleza y aventura">Naturaleza y aventura</option>
+            <option value="Cultura y patrimonio">Cultura y patrimonio</option>
+            <option value="Gastronomía">Gastronomía</option>
+            <option value="Relajación y bienestar">Relajación y bienestar</option>
+            <option value="Eventos (especificar)">Eventos (especificar)</option>
+            <option value="Visita a familiares/amigos">Visita a familiares/amigos</option>
+            <option value="Otro">Otro</option>
+        </select><br><br>
+
+        <label for="descubrimiento">Cómo se Enteró de Panguipulli:</label>
+        <select name="descubrimiento" id="descubrimiento">
+            <option value="" selected>Seleccione...</option>
+            <option value="Internet (redes sociales, buscadores, etc.)">Internet</option>
+            <option value="Recomendación de amigos/familiares">Recomendación</option>
+            <option value="Medios de comunicación (guías, revistas, etc.)">Medios</option>
+            <option value="Oficina de turismo (otra ciudad)">Oficina de turismo</option>
+            <option value="Otro">Otro</option>
+        </select><br><br>
+
+        <label for="viaje">Con Quién Viajó:</label>
+        <select name="viaje" id="viaje">
+            <option value="" selected>Seleccione...</option>
+            <option value="Solo">Solo</option>
+            <option value="En pareja">En pareja</option>
+            <option value="Con familia">Con familia</option>
+            <option value="Con amigos">Con amigos</option>
+            <option value="En grupo">En grupo</option>
+        </select><br><br>
+
+        <label for="transporte">Medio de Transporte Principal:</label>
+        <select name="transporte" id="transporte">
+            <option value="" selected>Seleccione...</option>
+            <option value="Auto">Auto</option>
+            <option value="Bus">Bus</option>
+            <option value="Moto">Moto</option>
+            <option value="Bicicleta">Bicicleta</option>
+            <option value="Otro">Otro</option>
+        </select><br><br>
+
+        <button type="submit">Guardar</button>
+    </form>
+
+    <button id="btn_generar_csv">Generar CSV</button>
+
+    <div id="mensajes"></div>
+
+    <script>
+        const formulario = document.getElementById("formulario");
+        const nacionalidad = document.getElementById("nacionalidad");
+        const div_comuna = document.getElementById("div_comuna");
+        const comuna = document.getElementById("comuna");
+        const btn_generar_csv = document.getElementById("btn_generar_csv");
+        const mensajesDiv = document.getElementById("mensajes");
+
+        // Función para verificar la nacionalidad y mostrar/ocultar la comuna
+        function verificarNacionalidad() {
+            if (nacionalidad.value === "Chile") {
+                div_comuna.style.display = "block";
+                comuna.disabled = false;
+            } else {
+                div_comuna.style.display = "none";
+                comuna.disabled = true;
+                comuna.value = ""; // Reiniciar el valor del select de comuna
+            }
+        }
+
+        // Evento change para la nacionalidad
+        nacionalidad.addEventListener("change", verificarNacionalidad);
+
+        formulario.addEventListener("submit", function (event) {
+            event.preventDefault();
+
+            const campos_requeridos = ["nacionalidad", "motivo_visita", "descubrimiento", "viaje", "transporte"];
+            if (nacionalidad.value === "Chile") {
+                campos_requeridos.push("comuna");
+            }
+
+            // Verifica si algún campo obligatorio está vacío
+            if (campos_requeridos.some(id => document.getElementById(id).value === "")) {
+                alert("Por favor, complete todos los campos obligatorios.");
+                return;
+            }
+
+            fetch("/", {
+                method: "POST",
+                body: new FormData(formulario)
+            })
+                .then(response => response.json())
+                .then(data => mostrarMensaje(data));
+        });
+
+        btn_generar_csv.addEventListener("click", function () {
+            fetch("/generar_csv")
+                .then(response => {
+                    if (response.ok) {
+                        // Obtener el nombre del archivo del encabezado Content-Disposition
+                        const contentDisposition = response.headers.get("Content-Disposition");
+                        const filename = contentDisposition.split("filename=")[1];
+
+                        // Crear un enlace para descargar el archivo
+                        const enlace = document.createElement("a");
+                        enlace.href = "/generar_csv";
+                        enlace.download = filename; // Nombre del archivo
+                        enlace.style.display = "none"; // Ocultar el enlace
+                        document.body.appendChild(enlace);
+
+                        // Simular un clic en el enlace para iniciar la descarga
+                        enlace.click();
+
+                        // Eliminar el enlace
+                        document.body.removeChild(enlace);
+
+                        mostrarMensaje({ "message": "Archivo CSV generado y descargado correctamente." });
+                    } else {
+                        mostrarMensaje({ "error": "Error al generar el archivo CSV." });
+                    }
+                });
+        });
+
+        function mostrarMensaje(data) {
+            mensajesDiv.innerHTML = ""; // Limpiar mensajes anteriores
+            if (data.message) {
+                const mensajeElemento = document.createElement("p");
+                mensajeElemento.classList.add("exito");
+                mensajeElemento.textContent = data.message;
+                mensajesDiv.appendChild(mensajeElemento);
+                formulario.reset();
+            } else if (data.error) {
+                const mensajeElemento = document.createElement("p");
+                mensajeElemento.classList.add("error");
+                mensajeElemento.textContent = data.error;
+                mensajesDiv.appendChild(mensajeElemento);
+            }
+        }
+    </script>
+</body>
+
+</html>
